@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - ShowHub</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+    <nav class="navbar">
+        <a href="../index.html" class="logo">Show<span>Hub</span></a>
+        <div class="nav-links">
+            <a href="../index.html">Home</a>
+            <a href="movies.html">Movies</a>
+        </div>
+        <div class="nav-user" id="nav-user"></div>
+    </nav>
+
+    <div class="container" style="max-width: 450px; margin-top: 3rem;">
+        <div class="card" style="border:none;">
+            <div class="card-body" style="padding: 2rem;">
+
+                <h2 style="text-align:center; margin-bottom: 1.5rem;">Create Account 🎬</h2>
+
+                <!-- 🔹 STEP 1: REGISTER FORM -->
+                <form id="register-form" onsubmit="sendOtp(event)">
+                    
+                    <div class="form-group">
+                        <label>Full Name</label>
+                        <input type="text" id="name" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" id="email" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Phone</label>
+                        <input type="tel" id="phone">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" id="password" required>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-block">
+                        Send OTP
+                    </button>
+                </form>
+
+                <!-- 🔹 STEP 2: OTP SECTION -->
+                <div id="otp-section" style="display:none; margin-top:1.5rem;">
+                    
+                    <div class="form-group">
+                        <label>Enter OTP</label>
+                        <input type="text" id="otp" placeholder="Enter 6-digit OTP">
+                    </div>
+
+                    <button class="btn btn-success btn-block" onclick="verifyOtp()">
+                        Verify & Register
+                    </button>
+
+                    <button class="btn btn-secondary btn-block" style="margin-top:0.5rem;" onclick="resendOtp()">
+                        Resend OTP
+                    </button>
+                </div>
+
+                <p style="text-align: center; margin-top: 1rem; font-size: 0.9rem;">
+                    Already have an account? 
+                    <a href="login.html" style="color: var(--primary); font-weight:600;">Login</a>
+                </p>
+
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/api.js"></script>
+    <script src="../js/utils.js"></script>
+
+    <script>
+
+        let registerData = {};
+
+        // 🔥 STEP 1: SEND OTP
+        async function sendOtp(e) {
+    e.preventDefault();
+phone= document.getElementById('phone').value;
+phone=String(phone).trim();
+
+if(phone && !/^\d{10}$/.test(phone)) {
+    showToast('Enter a valid 10-digit phone number', 'error');
+    return;
+}
+// if(!registerData.name || !registerData.email || !registerData.password) {
+//     showToast('Please fill all required fields', 'error');
+//     return;
+// }
+    registerData = {
+        name: document.getElementById('name').value,
+        email: document.getElementById('email').value,
+        phone: document.getElementById('phone').value,
+        password: document.getElementById('password').value
+    };
+
+    try {
+        await UserAPI.sendOtp(registerData);
+
+        showToast('OTP sent to your email 📧', 'success');
+
+        // 🔥 FORCE SHOW OTP SECTION
+        const otpSection = document.getElementById('otp-section');
+        otpSection.style.display = 'block';
+
+    } catch (err) {
+        showToast(err.message, 'error');
+    }
+}
+
+        // 🔥 STEP 2: VERIFY OTP
+        async function verifyOtp() {
+
+            const otp = document.getElementById('otp').value;
+
+            if (!otp) {
+                showToast('Enter OTP', 'error');
+                return;
+            }
+
+            try {
+
+                const user = await UserAPI.verifyOtp({
+                    email: registerData.email,
+                    otp: otp
+                });
+
+                setLoggedInUser(user);
+
+                showToast('🎉 Account verified successfully!', 'success');
+
+                setTimeout(() => {
+                    window.location.href = '../index.html';
+                }, 1000);
+
+            } catch (err) {
+                showToast(err.message, 'error');
+            }
+        }
+
+        // 🔁 RESEND OTP
+        async function resendOtp() {
+            try {
+                await UserAPI.sendOtp(registerData);
+                showToast('OTP resent 📧', 'success');
+            } catch (err) {
+                showToast(err.message, 'error');
+            }
+        }
+
+    </script>
+
+</body>
+</html>

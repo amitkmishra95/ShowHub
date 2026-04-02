@@ -1,0 +1,418 @@
+<script>
+  let admin = null;
+let adminTheaters = [];
+console.log("Admin theaters:", adminTheaters);
+   function checkAdminAuth() {
+    const admin = getLoggedInAdmin();
+
+    if (!admin) {
+        showToast("Please login as admin", "error");
+
+        setTimeout(() => {
+            window.location.href = "admin-login.html"; 
+        }, 500);
+
+        return false;
+    }
+    adminTheaters=TheaterAPI.getByAdmin(admin.id);
+    console.log("Admin theaters:", adminTheaters);
+    return true;
+}
+</script>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - ShowHub</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+    <nav class="navbar">
+        <a href="../index.html" class="logo">Show<span>Hub</span></a>
+        <div class="nav-links">
+            <a href="../index.html">Home</a>
+            <a href="movies.html">Movies</a>
+            <a href="theaters.html">Theaters</a>
+            <a href="bookings.html">My Bookings</a>
+            <a href="admin.html" class="active">Admin</a>
+        </div>
+        <div class="nav-user" id="nav-user"></div>
+    </nav>
+
+    <div class="container">
+        <h2 class="section-title">Admin Panel</h2>
+
+        
+        <div class="tabs">
+           
+            <button class="tab" onclick="switchTab('screens', this)">Screens</button>
+            <button class="tab" onclick="switchTab('seats', this)">Seats</button>
+            <button class="tab" onclick="switchTab('shows', this)">Shows</button>
+        </div>
+
+      
+        <div id="tab-screens" class="tab-content" style="display:none;">
+            <div style="display:flex; gap:1rem; margin-bottom:1.5rem; flex-wrap:wrap; align-items:flex-end;">
+                <div class="form-group" style="flex:1;min-width:150px;margin:0;">
+                    <label>Screen Name</label>
+                    <input type="text" id="screen-name" placeholder="Screen 1">
+                </div>
+                <div class="form-group" style="flex:1;min-width:100px;margin:0;">
+                    <label>Total Seats</label>
+                    <input type="number" id="screen-seats" placeholder="100">
+                </div>
+                <div class="form-group" style="flex:1;min-width:100px;margin:0;">
+                    <label>Total Rows</label>
+                    <input type="number" id="screen-rows" placeholder="10">
+                </div>
+                <div class="form-group" style="flex:1;min-width:100px;margin:0;">
+                    <label>Total Column</label>
+                    <input type="number" id="screen-column" placeholder="10">
+                </div>
+                <div class="form-group" style="flex:1;min-width:100px;margin:0;">
+                    <label>VIP Seats</label>
+                    <input type="number" id="screen-vip" placeholder="10">
+                </div>
+                <div class="form-group" style="flex:1;min-width:100px;margin:0;">
+                    <label>PREMIUM Seats</label>
+                    <input type="number" id="screen-premium" placeholder="10">
+                </div>
+                <div class="form-group" style="flex:1;min-width:100px;margin:0;">
+                    <label>REGULAR Seats</label>
+                    <input type="number" id="screen-regular" placeholder="10">
+                </div>
+
+                <div class="form-group" style="flex:1;min-width:150px;margin:0;">
+                    <label>Theater</label>
+                    <select id="screen-theater"></select>
+                </div>
+                <button class="btn btn-primary" onclick="addScreen()">Add Screen</button>
+            </div>
+            <div id="screens-table"></div>
+        </div>
+
+        <div id="tab-seats" class="tab-content" style="display:none;">
+            <div style="display:flex; gap:1rem; margin-bottom:1rem; flex-wrap:wrap; align-items:flex-end;">
+                <div class="form-group" style="flex:1;min-width:120px;margin:0;">
+                    <label>Screen</label>
+                    <select id="seat-screen" onchange="loadSeatsForScreen()"></select>
+                </div>
+                <div class="form-group" style="flex:1;min-width:80px;margin:0;">
+                    <label>Row (e.g. A)</label>
+                    <input type="text" id="seat-row" placeholder="A" maxlength="2">
+                </div>
+                <div class="form-group" style="flex:1;min-width:60px;margin:0;">
+                    <label>From Col</label>
+                    <input type="number" id="seat-col-from" placeholder="1" min="1">
+                </div>
+                <div class="form-group" style="flex:1;min-width:60px;margin:0;">
+                    <label>To Col</label>
+                    <input type="number" id="seat-col-to" placeholder="10" min="1">
+                </div>
+                <div class="form-group" style="flex:1;min-width:100px;margin:0;">
+                    <label>Type</label>
+                    <select id="seat-type">
+                        <option value="REGULAR">REGULAR</option>
+                        <option value="PREMIUM">PREMIUM</option>
+                        <option value="VIP">VIP</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary" onclick="addSeats()">Add Seats</button>
+            </div>
+            <p style="color:var(--text-muted);font-size:0.8rem;margin-bottom:1rem;">💡 This will create seats from col "From" to col "To" for the given row (e.g. A1, A2...A10)</p>
+            <div id="seats-table"></div>
+        </div>
+
+        <div id="tab-shows" class="tab-content" style="display:none;">
+            <div style="display:flex; gap:1rem; margin-bottom:1.5rem; flex-wrap:wrap; align-items:flex-end;">
+                <div class="form-group" style="flex:1;min-width:150px;margin:0;">
+                    <label>Movie</label>
+                    <select id="show-movie"></select>
+                </div>
+                <div class="form-group" style="flex:1;min-width:150px;margin:0;">
+                    <label>Screen</label>
+                    <select id="show-screen"></select>
+                </div>
+                <div class="form-group" style="flex:1;min-width:120px;margin:0;">
+                    <label>Date</label>
+                    <input type="date" id="show-date">
+                </div>
+                <div class="form-group" style="flex:1;min-width:100px;margin:0;">
+                    <label>Start Time</label>
+                    <input type="time" id="show-start">
+                </div>
+                <div class="form-group" style="flex:1;min-width:100px;margin:0;">
+                    <label>End Time</label>
+                    <input type="time" id="show-end">
+                </div>
+                <div class="form-group" style="flex:1;min-width:80px;margin:0;">
+                    <label>VIP Ticket Price (₹)</label>
+                    <input type="number" id="vip-show-price" placeholder="250">
+                </div>
+                <div class="form-group" style="flex:1;min-width:80px;margin:0;">
+                    <label>PREMIUM Ticket Price (₹)</label>
+                    <input type="number" id="premium-show-price" placeholder="350">
+                </div>
+                <div class="form-group" style="flex:1;min-width:80px;margin:0;">
+                    <label>REGULAR Ticket Price (₹)</label>
+                    <input type="number" id="regular-show-price" placeholder="200">
+                </div>
+                <button class="btn btn-primary" onclick="addShow()">Add Show</button>
+            </div>
+            <div id="shows-table"></div>
+        </div>
+    </div>
+
+    <script src="../js/api.js"></script>
+    <script src="../js/utils.js"></script>
+    <script>
+        // ===== TAB SWITCHING =====
+        function switchTab(tab, el) {
+            document.querySelectorAll('.tab-content').forEach(t => t.style.display = 'none');
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.getElementById('tab-' + tab).style.display = 'block';
+            el.classList.add('active');
+        }
+
+        
+       async function init() {
+    admin = getLoggedInAdmin();
+
+    let theaters = await TheaterAPI.getAll();
+    adminTheaters = theaters.filter(t => t.admin?.id === admin.id);
+    const screenTheater = document.getElementById('screen-theater');
+        if (screenTheater) {
+            screenTheater.innerHTML =
+                '<option value="">Select Theater</option>' +
+                adminTheaters.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+        }
+    await Promise.all([
+        loadScreens(),
+        loadShows(),
+        loadMoviesDropdown() // only for show dropdown
+    ]);
+}
+
+async function loadMoviesDropdown() {
+    try {
+        const movies = await MovieAPI.getAll();
+
+        console.log("Movies:", movies); // debug
+
+        const movieSelect = document.getElementById('show-movie');
+
+        if (!movieSelect) return;
+
+        movieSelect.innerHTML =
+            '<option value="">Select Movie</option>' +
+            movies.map(m => `<option value="${m.id}">${m.title}</option>`).join('');
+
+    } catch (e) {
+        console.log("Error loading movies", e);
+    }
+}
+        
+        async function loadTheaters() {
+            try {
+               const admin = getLoggedInAdmin();
+let theaters = await TheaterAPI.getAll();
+
+theaters = theaters.filter(t => t.admin?.id === admin.id);
+                let html = '<table class="data-table"><thead><tr><th>ID</th><th>Name</th><th>Address</th><th>City</th></tr></thead><tbody>';
+                theaters.forEach(t => html += `<tr><td>${t.id}</td><td>${t.name}</td><td>${t.address || ''}</td><td>${t.city?.name || ''}</td></tr>`);
+                html += '</tbody></table>';
+                document.getElementById('theaters-table').innerHTML = theaters.length ? html : '<div class="empty-state"><p>No theaters added yet</p></div>';
+
+                // dropdown for screens
+                const screenTheater = document.getElementById('screen-theater');
+                if (screenTheater) {
+                    screenTheater.innerHTML = '<option value="">Select Theater</option>' + theaters.map(t => `<option value="${t.id}">${t.name} (${t.city?.name || ''})</option>`).join('');
+                }
+            } catch (e) { console.log('Error loading theaters'); }
+        }
+
+        
+
+    async function loadScreens() {
+    try {
+        let screens = await ScreenAPI.getAll();
+
+        console.log("All screens:", screens);
+
+        screens = screens.filter(s =>
+            adminTheaters.some(t => t.id === s.theatre?.id || t.id === s.theater?.id)
+        );
+
+        console.log("Filtered screens:", screens);
+
+        let html = '<table class="data-table"><thead><tr><th>ID</th><th>Name</th><th>Seats</th><th>Theater</th></tr></thead><tbody>';
+
+        screens.forEach(s => html += `
+            <tr>
+                <td>${s.id}</td>
+                <td>${s.name}</td>
+                <td>${s.totalSeats || ''}</td>
+                <td>${s.theatre?.name || s.theater?.name || ''}</td>
+            </tr>
+        `);
+
+        html += '</tbody></table>';
+
+        document.getElementById('screens-table').innerHTML =
+            screens.length ? html : '<div class="empty-state"><p>No screens</p></div>';
+
+        const opts = '<option value="">Select Screen</option>' +
+            screens.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+
+        document.getElementById('seat-screen').innerHTML = opts;
+        document.getElementById('show-screen').innerHTML = opts;
+
+    } catch (e) {
+        console.log("Error loading screens", e);
+    }
+}
+      async function addScreen() {
+    
+const theaterId = Number(document.getElementById('screen-theater').value);
+    const allowed = adminTheaters.some(t => t.id === theaterId);
+
+    if (!allowed) {
+        showToast("You can only use your own theater", "error");
+        return;
+    }
+
+    const data = {
+        name: document.getElementById('screen-name').value.trim(),
+        totalSeats: parseInt(document.getElementById('screen-seats').value),
+        rows: parseInt(document.getElementById('screen-rows').value),
+        columns: parseInt(document.getElementById('screen-column').value),
+        vipCount: parseInt(document.getElementById('screen-vip').value),
+        premiumCount: parseInt(document.getElementById('screen-premium').value),
+        regularCount: parseInt(document.getElementById('screen-regular').value),
+        theaterId: theaterId
+    };
+    console.log(typeof data.totalSeats, typeof data.rows, typeof data.columns, typeof data.vipCount, typeof data.premiumCount, typeof data.regularCount, typeof data.theaterId);
+console.log(data.totalSeats+" "+data.rows+" "+data.columns);
+    if (
+    !data.name ||
+    !data.theaterId ||
+    isNaN(data.totalSeats) ||
+    isNaN(data.rows) ||
+    isNaN(data.columns)||
+    isNaN(data.vipCount) ||
+    isNaN(data.premiumCount) ||
+    isNaN(data.regularCount) 
+) {
+
+        showToast('Fill all fields', 'error');
+        return;
+    }
+
+    try {
+        await ScreenAPI.add(data);
+        showToast('Screen added!', 'success');
+        loadScreens();
+    } catch (e) {
+        showToast(e.message, 'error');
+    }
+}
+   
+        async function loadSeatsForScreen() {
+            const screenId = document.getElementById('seat-screen').value;
+            if (!screenId) { document.getElementById('seats-table').innerHTML = ''; return; }
+            try {
+                const seats = await SeatAPI.getByScreen(screenId);
+                let html = '<table class="data-table"><thead><tr><th>ID</th><th>Seat #</th><th>Row</th><th>Col</th><th>Type</th></tr></thead><tbody>';
+                seats.forEach(s => html += `<tr><td>${s.id}</td><td>${s.seatNumber}</td><td>${s.row || ''}</td><td>${s.col || ''}</td><td>${s.seatType || ''}</td></tr>`);
+                html += '</tbody></table>';
+                document.getElementById('seats-table').innerHTML = seats.length ? html : '<div class="empty-state"><p>No seats for this screen</p></div>';
+            } catch (e) { document.getElementById('seats-table').innerHTML = ''; }
+        }
+
+        async function addSeats() {
+            const screenId = parseInt(document.getElementById('seat-screen').value);
+            const row = document.getElementById('seat-row').value.trim().toUpperCase();
+            const from = parseInt(document.getElementById('seat-col-from').value);
+            const to = parseInt(document.getElementById('seat-col-to').value);
+            const seatType = document.getElementById('seat-type').value;
+
+            if (!screenId || !row || !from || !to) { showToast('Fill all seat fields', 'error'); return; }
+            if (from > to) { showToast('From col must be <= To col', 'error'); return; }
+
+            try {
+                for (let col = from; col <= to; col++) {
+                    await SeatAPI.add({
+                        seatNumber: row + col,
+                        row: row,
+                        col: col,
+                        seatType: seatType,
+                        screenId: screenId
+                    });
+                }
+                showToast(`Added seats ${row}${from} to ${row}${to}!`, 'success');
+                loadSeatsForScreen();
+            } catch (e) { showToast(e.message, 'error'); }
+        }
+
+        // ===== SHOWS =====
+    async function loadShows() {
+    try {
+        let shows = await ShowAPI.getAll();
+
+        shows = shows.filter(s =>
+            adminTheaters.some(t => t.id === s.screen?.theatre?.id || t.id === s.screen?.theater?.id)
+        );
+
+        let html = '<table class="data-table"><thead><tr><th>ID</th><th>Movie</th><th>Screen</th><th>Date</th><th>Time</th><th>Price</th></tr></thead><tbody>';
+
+        shows.forEach(s => html += `
+            <tr>
+                <td>${s.id}</td>
+                <td>${s.movie?.title || ''}</td>
+                <td>${s.screen?.name || ''} (${s.screen?.theatre?.name || s.screen?.theater?.name || ''})</td>
+                <td>${s.showDate}</td>
+                <td>${s.startTime}</td>
+                <td>₹${s.ticketPrice || 0}</td>
+            </tr>
+        `);
+
+        html += '</tbody></table>';
+
+        document.getElementById('shows-table').innerHTML =
+            shows.length ? html : '<div class="empty-state"><p>No shows</p></div>';
+
+    } catch (e) {
+        console.log("Error loading shows", e);
+    }
+}        async function addShow() {
+    const date = document.getElementById('show-date').value;
+const start = document.getElementById('show-start').value;
+const end = document.getElementById('show-end').value;
+            const data = {
+                movieId: parseInt(document.getElementById('show-movie').value),
+                screenId: parseInt(document.getElementById('show-screen').value),
+                showDate: date,
+                startTime: date + "T"+start+":00",
+                endTime: date + "T"+end+":00" || null,
+                vipPrice: parseFloat(document.getElementById('vip-show-price').value) ,
+                premiumPrice: parseFloat(document.getElementById('premium-show-price').value),
+                regularPrice: parseFloat(document.getElementById('regular-show-price').value)
+            };
+            if (!data.movieId || !data.screenId || !data.showDate || !data.startTime) {
+                showToast('Fill movie, screen, date and start time', 'error'); return;
+            }
+            try {
+                await ShowAPI.add(data);
+                showToast('Show added!', 'success');
+                ['show-date','show-start','show-end','vip-show-price','premium-show-price','regular-show-price'].forEach(id => document.getElementById(id).value = '');
+                loadShows();
+            } catch (e) { showToast(e.message, 'error'); }
+        }
+if (checkAdminAuth()) {
+    init();
+}
+    </script>
+</body>
+</html>
